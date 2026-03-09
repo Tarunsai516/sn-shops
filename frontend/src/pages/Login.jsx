@@ -4,16 +4,16 @@ function Login() {
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-gray-950 overflow-hidden">
 
-      {/* Background gradient */}
+      {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-indigo-950"></div>
 
-      {/* Glow circles */}
-      <div className="absolute w-96 h-96 bg-indigo-600 rounded-full blur-[140px] opacity-30 top-[-80px] left-[-80px]"></div>
+      {/* Animated Glow Blobs */}
+      <div className="absolute w-96 h-96 bg-indigo-600 rounded-full blur-[140px] opacity-30 top-[-80px] left-[-80px] blob-animation"></div>
 
-      <div className="absolute w-96 h-96 bg-purple-600 rounded-full blur-[140px] opacity-30 bottom-[-80px] right-[-80px]"></div>
+      <div className="absolute w-96 h-96 bg-purple-600 rounded-full blur-[140px] opacity-30 bottom-[-80px] right-[-80px] blob-animation"></div>
 
       {/* Login Card */}
-      <div className="relative z-10 bg-gray-900/70 backdrop-blur-xl border border-gray-700 shadow-2xl rounded-2xl p-10 w-96">
+      <div className="relative z-10 bg-gray-900/70 backdrop-blur-xl border border-gray-700 shadow-2xl rounded-2xl p-10 w-96 transition hover:scale-[1.02]">
 
         <h1 className="text-3xl font-bold text-center text-white mb-2">
           SN Shops
