@@ -1,0 +1,41 @@
+package com.snshops.service;
+
+import com.snshops.dto.DashboardResponse;
+import com.snshops.repository.CustomerRepository;
+import com.snshops.repository.ProductRepository;
+import com.snshops.repository.SaleRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class DashboardService {
+
+    private final SaleRepository saleRepository;
+    private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
+
+    public DashboardResponse getDashboardData() {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        BigDecimal dailyRevenue = saleRepository.getDailyRevenue(startOfDay, endOfDay);
+        BigDecimal totalDebt = customerRepository.getTotalOutstandingDebt();
+        long lowStockCount = productRepository.countLowStockProducts();
+        long totalProducts = productRepository.count();
+        long totalCustomers = customerRepository.count();
+
+        return DashboardResponse.builder()
+                .dailyRevenue(dailyRevenue)
+                .totalOutstandingDebt(totalDebt)
+                .lowStockCount(lowStockCount)
+                .totalProducts(totalProducts)
+                .totalCustomers(totalCustomers)
+                .totalSalesToday(0)
+                .build();
+    }
+}
