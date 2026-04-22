@@ -21,7 +21,7 @@ public class Product {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(unique = true, length = 50)
+    @Column(length = 50)
     private String sku;
 
     @Column(length = 50)
@@ -40,4 +40,8 @@ public class Product {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

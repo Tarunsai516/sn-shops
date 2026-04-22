@@ -17,7 +17,7 @@ export default function RegisterPage() {
     try {
       const { data } = await authApi.register(form);
       login({ username: data.username, role: data.role }, data.token);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

@@ -28,15 +28,15 @@ public class SaleService {
     private final CustomerRepository customerRepository;
 
     @Transactional
-    public SaleResponse createSale(SaleRequest request) {
+    public SaleResponse createSale(User user, SaleRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BadRequestException("Sale must contain at least one item");
         }
 
-        // Resolve customer (optional for walk-in)
+        // Resolve customer (optional for walk-in) — must belong to same user
         Customer customer = null;
         if (request.getCustomerId() != null) {
-            customer = customerRepository.findById(request.getCustomerId())
+            customer = customerRepository.findByIdAndUser(request.getCustomerId(), user)
                     .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + request.getCustomerId()));
         }
 
@@ -45,7 +45,7 @@ public class SaleService {
         List<SaleItem> saleItems = new ArrayList<>();
 
         for (SaleRequest.SaleItemRequest itemReq : request.getItems()) {
-            Product product = productRepository.findById(itemReq.getProductId())
+            Product product = productRepository.findByIdAndUser(itemReq.getProductId(), user)
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemReq.getProductId()));
 
             if (!product.getIsActive()) {
@@ -93,8 +93,9 @@ public class SaleService {
             throw new BadRequestException("Walk-in customers cannot have outstanding debt. Full payment required.");
         }
 
-        // Create sale
+        // Create sale — assigned to user
         Sale sale = Sale.builder()
+                .user(user)
                 .customer(customer)
                 .totalAmount(totalAmount)
                 .amountPaid(amountPaid)
@@ -121,23 +122,23 @@ public class SaleService {
         return mapToResponse(sale);
     }
 
-    public Page<SaleResponse> getAllSales(Pageable pageable) {
-        return saleRepository.findAll(pageable).map(this::mapToResponse);
+    public Page<SaleResponse> getAllSales(User user, Pageable pageable) {
+        return saleRepository.findAllByUser(user, pageable).map(this::mapToResponse);
     }
 
-    public SaleResponse getSaleById(Long id) {
-        Sale sale = saleRepository.findById(id)
+    public SaleResponse getSaleById(User user, Long id) {
+        Sale sale = saleRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + id));
         return mapToResponse(sale);
     }
 
-    public Page<SaleResponse> getSalesByCustomer(Long customerId, Pageable pageable) {
-        return saleRepository.findByCustomerId(customerId, pageable).map(this::mapToResponse);
+    public Page<SaleResponse> getSalesByCustomer(User user, Long customerId, Pageable pageable) {
+        return saleRepository.findByUserAndCustomerId(user, customerId, pageable).map(this::mapToResponse);
     }
 
-    public Page<SaleResponse> getDebtSales(Pageable pageable) {
+    public Page<SaleResponse> getDebtSales(User user, Pageable pageable) {
         List<PaymentStatus> debtStatuses = List.of(PaymentStatus.UNPAID, PaymentStatus.PARTIAL);
-        return saleRepository.findByPaymentStatusIn(debtStatuses, pageable).map(this::mapToResponse);
+        return saleRepository.findByUserAndPaymentStatusIn(user, debtStatuses, pageable).map(this::mapToResponse);
     }
 
     private PaymentStatus calculatePaymentStatus(BigDecimal amountPaid, BigDecimal totalAmount) {

@@ -60,9 +60,9 @@ docker-compose up -d
 ```
 
 This starts MySQL 8 on port `3306` with:
-- Database: `snshops_db`
-- User: `snshops`
-- Password: `snshops123`
+- Database: `your_dbname`
+- User: `your_username`
+- Password: `your_password`
 
 ---
 
@@ -233,9 +233,9 @@ Tables auto-created by Hibernate:
 # docker-compose.yml
 MySQL 8.0
   Port: 3306
-  Database: snshops_db
-  User: snshops / Password: snshops123
-  Root Password: root123
+  Database: your_dbname
+  User: your_nmae / Password: your_password
+  Root Password: your_password
   Volume: mysql_data (persistent)
 ```
 

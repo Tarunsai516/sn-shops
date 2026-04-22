@@ -5,6 +5,7 @@ import com.snshops.dto.PaymentResponse;
 import com.snshops.entity.Customer;
 import com.snshops.entity.Payment;
 import com.snshops.entity.Sale;
+import com.snshops.entity.User;
 import com.snshops.enums.PaymentStatus;
 import com.snshops.exception.BadRequestException;
 import com.snshops.exception.ResourceNotFoundException;
@@ -29,8 +30,8 @@ public class PaymentService {
     private final CustomerRepository customerRepository;
 
     @Transactional
-    public PaymentResponse recordPayment(PaymentRequest request) {
-        Sale sale = saleRepository.findById(request.getSaleId())
+    public PaymentResponse recordPayment(User user, PaymentRequest request) {
+        Sale sale = saleRepository.findByIdAndUser(request.getSaleId(), user)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + request.getSaleId()));
 
         if (sale.getCustomer() == null) {
@@ -84,13 +85,13 @@ public class PaymentService {
         return mapToResponse(payment, newBalanceDue);
     }
 
-    public Page<PaymentResponse> getPaymentHistory(Pageable pageable) {
-        return paymentRepository.findAllByOrderByPaymentDateDesc(pageable)
+    public Page<PaymentResponse> getPaymentHistory(User user, Pageable pageable) {
+        return paymentRepository.findAllByUser(user, pageable)
                 .map(p -> mapToResponse(p, p.getSale().getBalanceDue()));
     }
 
-    public Page<PaymentResponse> getPaymentsByCustomer(Long customerId, Pageable pageable) {
-        return paymentRepository.findByCustomerId(customerId, pageable)
+    public Page<PaymentResponse> getPaymentsByCustomer(User user, Long customerId, Pageable pageable) {
+        return paymentRepository.findByCustomerIdAndUser(customerId, user, pageable)
                 .map(p -> mapToResponse(p, p.getSale().getBalanceDue()));
     }
 

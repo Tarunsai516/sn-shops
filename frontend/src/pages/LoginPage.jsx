@@ -17,7 +17,7 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login(form);
       login({ username: data.username, role: data.role }, data.token);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {

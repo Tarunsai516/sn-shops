@@ -1,6 +1,7 @@
 package com.snshops.service;
 
 import com.snshops.dto.DashboardResponse;
+import com.snshops.entity.User;
 import com.snshops.repository.CustomerRepository;
 import com.snshops.repository.ProductRepository;
 import com.snshops.repository.SaleRepository;
@@ -19,15 +20,15 @@ public class DashboardService {
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
 
-    public DashboardResponse getDashboardData() {
+    public DashboardResponse getDashboardData(User user) {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-        BigDecimal dailyRevenue = saleRepository.getDailyRevenue(startOfDay, endOfDay);
-        BigDecimal totalDebt = customerRepository.getTotalOutstandingDebt();
-        long lowStockCount = productRepository.countLowStockProducts();
-        long totalProducts = productRepository.count();
-        long totalCustomers = customerRepository.count();
+        BigDecimal dailyRevenue = saleRepository.getDailyRevenue(user, startOfDay, endOfDay);
+        BigDecimal totalDebt = customerRepository.getTotalOutstandingDebt(user);
+        long lowStockCount = productRepository.countLowStockProducts(user);
+        long totalProducts = productRepository.countByUser(user);
+        long totalCustomers = customerRepository.countByUser(user);
 
         return DashboardResponse.builder()
                 .dailyRevenue(dailyRevenue)

@@ -3,6 +3,7 @@ package com.snshops.service;
 import com.snshops.dto.CustomerRequest;
 import com.snshops.dto.CustomerResponse;
 import com.snshops.entity.Customer;
+import com.snshops.entity.User;
 import com.snshops.exception.DuplicateResourceException;
 import com.snshops.exception.ResourceNotFoundException;
 import com.snshops.repository.CustomerRepository;
@@ -20,25 +21,25 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
 
-    public Page<CustomerResponse> getAllCustomers(String search, Pageable pageable) {
+    public Page<CustomerResponse> getAllCustomers(User user, String search, Pageable pageable) {
         Page<Customer> customers;
         if (search != null && !search.trim().isEmpty()) {
-            customers = customerRepository.searchCustomers(search.trim(), pageable);
+            customers = customerRepository.searchCustomers(user, search.trim(), pageable);
         } else {
-            customers = customerRepository.findAll(pageable);
+            customers = customerRepository.findAllByUser(user, pageable);
         }
         return customers.map(this::mapToResponse);
     }
 
-    public CustomerResponse getCustomerById(Long id) {
-        Customer customer = findCustomerOrThrow(id);
+    public CustomerResponse getCustomerById(User user, Long id) {
+        Customer customer = findCustomerOrThrow(user, id);
         return mapToResponse(customer);
     }
 
     @Transactional
-    public CustomerResponse createCustomer(CustomerRequest request) {
+    public CustomerResponse createCustomer(User user, CustomerRequest request) {
         if (request.getPhone() != null && !request.getPhone().isBlank()
-                && customerRepository.existsByPhone(request.getPhone())) {
+                && customerRepository.existsByPhoneAndUser(request.getPhone(), user)) {
             throw new DuplicateResourceException("Customer with phone '" + request.getPhone() + "' already exists");
         }
 
@@ -46,6 +47,7 @@ public class CustomerService {
                 .name(request.getName())
                 .phone(request.getPhone())
                 .totalDebtBalance(BigDecimal.ZERO)
+                .user(user)
                 .build();
 
         customer = customerRepository.save(customer);
@@ -53,16 +55,16 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
-        Customer customer = findCustomerOrThrow(id);
+    public CustomerResponse updateCustomer(User user, Long id, CustomerRequest request) {
+        Customer customer = findCustomerOrThrow(user, id);
         customer.setName(request.getName());
         customer.setPhone(request.getPhone());
         customer = customerRepository.save(customer);
         return mapToResponse(customer);
     }
 
-    public Customer findCustomerOrThrow(Long id) {
-        return customerRepository.findById(id)
+    public Customer findCustomerOrThrow(User user, Long id) {
+        return customerRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
     }
 

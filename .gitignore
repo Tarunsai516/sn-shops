@@ -43,6 +43,10 @@ frontend/.vite/
 ehthumbs.db
 Thumbs.db
 
+# Environment files
+.env
+*.env.local
+
 # Misc
 *.bak
 *.swp
