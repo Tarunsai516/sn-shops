@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
@@ -28,4 +29,10 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     BigDecimal getTotalOutstandingDebt(@Param("user") User user);
 
     long countByUser(User user);
+
+    @Query("SELECT c.name, COALESCE(SUM(s.totalAmount), 0), c.totalDebtBalance " +
+           "FROM Customer c LEFT JOIN c.sales s " +
+           "WHERE c.user = :user GROUP BY c.id, c.name, c.totalDebtBalance " +
+           "ORDER BY COALESCE(SUM(s.totalAmount), 0) DESC")
+    List<Object[]> getTopCustomers(@Param("user") User user, Pageable pageable);
 }
