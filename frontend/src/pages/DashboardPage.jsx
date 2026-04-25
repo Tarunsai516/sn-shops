@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardApi, productApi } from '../api';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, capitalize } from '../utils/helpers';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer
@@ -91,13 +91,22 @@ export default function DashboardPage() {
 
   const monthlyTrend = getTrend(data?.monthlyRevenue, data?.previousMonthRevenue);
 
+  const kpiIcons = {
+    revenue: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+    chart: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>,
+    receipt: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>,
+    debt: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5zM6 9.01V9"/><path d="M15 5s2-2 4-2 4 2 4 4-2 4-2 4"/></svg>,
+    alert: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>,
+    users: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  };
+
   const kpis = [
-    { label: "Today's Revenue", value: formatCurrency(data?.dailyRevenue), color: 'purple', icon: '💰' },
-    { label: "This Month", value: formatCurrency(data?.monthlyRevenue), color: 'blue', icon: '📈', trend: monthlyTrend },
-    { label: "Sales Today", value: data?.totalSalesToday || 0, color: 'cyan', icon: '🧾' },
-    { label: "Outstanding Debt", value: formatCurrency(data?.totalOutstandingDebt), color: 'red', icon: '📋' },
-    { label: "Low Stock Items", value: data?.lowStockCount || 0, color: 'orange', icon: '⚠️' },
-    { label: "Total Customers", value: data?.totalCustomers || 0, color: 'green', icon: '👥' },
+    { label: "Today's Revenue", value: formatCurrency(data?.dailyRevenue), color: 'purple', icon: kpiIcons.revenue },
+    { label: "This Month", value: formatCurrency(data?.monthlyRevenue), color: 'blue', icon: kpiIcons.chart, trend: monthlyTrend },
+    { label: "Sales Today", value: data?.totalSalesToday || 0, color: 'cyan', icon: kpiIcons.receipt },
+    { label: "Outstanding Debt", value: formatCurrency(data?.totalOutstandingDebt), color: 'red', icon: kpiIcons.debt },
+    { label: "Low Stock Items", value: data?.lowStockCount || 0, color: 'orange', icon: kpiIcons.alert },
+    { label: "Total Customers", value: data?.totalCustomers || 0, color: 'green', icon: kpiIcons.users },
   ];
 
   const monthlyChartData = (data?.monthlyRevenueData || []).map(item => ({
@@ -115,7 +124,7 @@ export default function DashboardPage() {
       {/* ─── Header ─── */}
       <div className="dashboard-header">
         <div className="greeting">
-          <h1>{getGreeting()}, {user?.username} 👋</h1>
+          <h1>{getGreeting()}, {capitalize(user?.username)} 👋</h1>
           <p>{formatDateStr()}</p>
         </div>
         <div className="quick-actions">
@@ -138,10 +147,9 @@ export default function DashboardPage() {
             <div className="kpi-icon">{kpi.icon}</div>
             <div className="kpi-label">{kpi.label}</div>
             <div className="kpi-value">{kpi.value}</div>
-            {kpi.trend && (
+            {kpi.trend && kpi.trend.pct > 0 && (
               <div className={`trend-indicator trend-${kpi.trend.dir}`}>
-                {kpi.trend.dir === 'up' ? '↑' : kpi.trend.dir === 'down' ? '↓' : '→'}
-                {kpi.trend.pct}% vs last month
+                {kpi.trend.dir === 'up' ? '↑' : '↓'} {kpi.trend.pct}% vs last month
               </div>
             )}
           </div>
@@ -152,7 +160,7 @@ export default function DashboardPage() {
       <div className="chart-card" id="chart-monthly-revenue">
         <div className="chart-header">
           <div>
-            <div className="chart-title">📊 Revenue Trend</div>
+            <div className="chart-title">Revenue Trend</div>
             <div className="chart-subtitle">Last 12 months performance</div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -192,7 +200,7 @@ export default function DashboardPage() {
         <div className="chart-card" id="chart-daily-revenue">
           <div className="chart-header">
             <div>
-              <div className="chart-title">📅 Daily Revenue</div>
+              <div className="chart-title">Daily Revenue</div>
               <div className="chart-subtitle">Current month breakdown</div>
             </div>
           </div>
@@ -219,7 +227,7 @@ export default function DashboardPage() {
         <div className="chart-card" id="section-top-products">
           <div className="chart-header">
             <div>
-              <div className="chart-title">🏆 Top Products</div>
+              <div className="chart-title">Top Products</div>
               <div className="chart-subtitle">Best sellers this month</div>
             </div>
           </div>
@@ -238,7 +246,7 @@ export default function DashboardPage() {
                   {data.topProducts.map((p, i) => (
                     <tr key={i}>
                       <td><span className="rank">{i + 1}</span></td>
-                      <td style={{ fontWeight: 600 }}>{p.name}</td>
+                      <td style={{ fontWeight: 600 }}>{capitalize(p.name)}</td>
                       <td>{p.unitsSold}</td>
                       <td style={{ fontWeight: 600, color: '#34d399' }}>{formatCurrency(p.revenue)}</td>
                     </tr>
@@ -258,7 +266,7 @@ export default function DashboardPage() {
         <div className="chart-card" id="section-recent-sales">
           <div className="chart-header">
             <div>
-              <div className="chart-title">🕐 Recent Sales</div>
+              <div className="chart-title">Recent Sales</div>
               <div className="chart-subtitle">Latest transactions</div>
             </div>
             <button className="btn-secondary" onClick={() => navigate('/pos')} style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>
@@ -274,7 +282,7 @@ export default function DashboardPage() {
                       {sale.customerName?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="activity-name">{sale.customerName}</div>
+                      <div className="activity-name">{capitalize(sale.customerName)}</div>
                       <div className="activity-time">{sale.createdAt}</div>
                     </div>
                   </div>
@@ -302,7 +310,7 @@ export default function DashboardPage() {
         <div className="chart-card" id="section-top-customers">
           <div className="chart-header">
             <div>
-              <div className="chart-title">⭐ Top Customers</div>
+              <div className="chart-title">Top Customers</div>
               <div className="chart-subtitle">By total purchase value</div>
             </div>
           </div>
@@ -321,7 +329,7 @@ export default function DashboardPage() {
                   {data.topCustomers.map((c, i) => (
                     <tr key={i}>
                       <td><span className="rank">{i + 1}</span></td>
-                      <td style={{ fontWeight: 600 }}>{c.name}</td>
+                      <td style={{ fontWeight: 600 }}>{capitalize(c.name)}</td>
                       <td style={{ fontWeight: 600, color: '#34d399' }}>{formatCurrency(c.totalPurchases)}</td>
                       <td style={{ color: c.debtBalance > 0 ? '#f87171' : '#a5b4fc' }}>
                         {formatCurrency(c.debtBalance)}
@@ -344,7 +352,7 @@ export default function DashboardPage() {
           <div className="chart-card span-full" id="section-low-stock">
             <div className="chart-header">
               <div>
-                <div className="chart-title" style={{ color: '#fbbf24' }}>⚠️ Low Stock Alerts</div>
+                <div className="chart-title" style={{ color: '#fbbf24' }}>Low Stock Alerts</div>
                 <div className="chart-subtitle">{lowStock.length} item{lowStock.length !== 1 ? 's' : ''} need restocking</div>
               </div>
               <span className="badge badge-warning">{lowStock.length}</span>
@@ -363,7 +371,7 @@ export default function DashboardPage() {
                 <tbody>
                   {lowStock.map((p) => (
                     <tr key={p.id}>
-                      <td style={{ fontWeight: 600 }}>{p.name}</td>
+                      <td style={{ fontWeight: 600 }}>{capitalize(p.name)}</td>
                       <td style={{ color: '#a5b4fc' }}>{p.sku || '—'}</td>
                       <td style={{ color: '#a5b4fc' }}>{p.category || '—'}</td>
                       <td>

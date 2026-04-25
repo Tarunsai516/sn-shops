@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { productApi, customerApi, saleApi } from '../api';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, capitalize } from '../utils/helpers';
 import Modal from '../components/Modal';
 
 // ─── Category filter pill ───
@@ -30,9 +30,9 @@ function ProductCard({ product, onAdd, inCart }) {
       id={`product-card-${product.id}`}
     >
       {inCart && <div className="pos-product-in-cart-badge">In Cart</div>}
-      {isLowStock && <div className="pos-product-low-badge">Low</div>}
+      {isLowStock && <div className="pos-product-low-badge">Low Stock</div>}
       <div className="pos-product-category">{product.category || 'General'}</div>
-      <div className="pos-product-name">{product.name}</div>
+      <div className="pos-product-name">{capitalize(product.name)}</div>
       {product.sku && <div className="pos-product-sku">SKU: {product.sku}</div>}
       <div className="pos-product-footer">
         <span className="pos-product-price">{formatCurrency(product.price)}</span>
@@ -49,7 +49,7 @@ function CartItem({ item, onUpdateQty, onRemove }) {
   return (
     <div className="pos-cart-item" id={`cart-item-${item.productId}`}>
       <div className="pos-cart-item-info">
-        <div className="pos-cart-item-name">{item.name}</div>
+        <div className="pos-cart-item-name">{capitalize(item.name)}</div>
         <div className="pos-cart-item-price">{formatCurrency(item.price)} × {item.quantity}</div>
       </div>
       <div className="pos-cart-item-controls">
@@ -130,7 +130,7 @@ function CustomerSelector({ customers, customerId, onSelect, onOpenNewCustomer, 
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
-        Customer
+        Select Customer
       </label>
 
       {/* Selected display or search input */}
@@ -138,7 +138,7 @@ function CustomerSelector({ customers, customerId, onSelect, onOpenNewCustomer, 
         <div className="pos-customer-selected" onClick={() => { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}>
           <div className="pos-customer-avatar">{selectedCustomer.name.charAt(0).toUpperCase()}</div>
           <div className="pos-customer-selected-info">
-            <span className="pos-customer-selected-name">{selectedCustomer.name}</span>
+            <span className="pos-customer-selected-name">{capitalize(selectedCustomer.name)}</span>
             {selectedCustomer.phone && <span className="pos-customer-selected-phone">{selectedCustomer.phone}</span>}
           </div>
           <button
@@ -189,7 +189,7 @@ function CustomerSelector({ customers, customerId, onSelect, onOpenNewCustomer, 
                 >
                   <div className="pos-customer-avatar">{c.name.charAt(0).toUpperCase()}</div>
                   <div>
-                    <div className="pos-customer-option-name">{c.name}</div>
+                    <div className="pos-customer-option-name">{capitalize(c.name)}</div>
                     <div className="pos-customer-option-sub">
                       {c.phone || 'No phone'}
                       {c.totalDebtBalance > 0 && <span className="pos-debt-tag">Debt: {formatCurrency(c.totalDebtBalance)}</span>}
@@ -238,6 +238,7 @@ export default function POSPage() {
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustLoading, setNewCustLoading] = useState(false);
   const [newCustError, setNewCustError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
 
   useEffect(() => {
     loadProducts();
@@ -311,6 +312,7 @@ export default function POSPage() {
     setAmountPaid('');
     setCustomerId('');
     setCustomerSearch('');
+    setPaymentMethod('CASH');
   };
 
   // ─── Calculations ───
@@ -348,6 +350,7 @@ export default function POSPage() {
       await saleApi.create({
         customerId: customerId ? parseInt(customerId) : null,
         amountPaid: paid,
+        paymentMethod: paymentMethod,
         items: cart.map(c => ({ productId: c.productId, quantity: c.quantity })),
       });
       setSuccess('✅ Sale completed successfully!');
@@ -541,6 +544,27 @@ export default function POSPage() {
               </svg>
               Payment
             </label>
+
+            {/* Payment Method Selector */}
+            <div className="payment-method-selector">
+              <button
+                type="button"
+                className={`payment-method-btn ${paymentMethod === 'CASH' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('CASH')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><path d="M1 10h22"/></svg>
+                Cash
+              </button>
+              <button
+                type="button"
+                className={`payment-method-btn ${paymentMethod === 'UPI' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('UPI')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V7M16 21V11"/></svg>
+                UPI
+              </button>
+            </div>
+
             <input
               type="number"
               step="0.01"

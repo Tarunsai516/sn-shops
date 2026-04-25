@@ -13,6 +13,8 @@ public class SaleRequest {
 
     private Long customerId;
 
+    private String paymentMethod; // CASH or UPI
+
     @NotNull(message = "Amount paid is required")
     @Min(value = 0, message = "Amount paid must be non-negative")
     private BigDecimal amountPaid;

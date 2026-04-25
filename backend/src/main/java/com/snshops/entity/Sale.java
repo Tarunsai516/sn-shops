@@ -1,5 +1,6 @@
 package com.snshops.entity;
 
+import com.snshops.enums.PaymentMethod;
 import com.snshops.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,6 +43,11 @@ public class Sale {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 10)
     private PaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 10)
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

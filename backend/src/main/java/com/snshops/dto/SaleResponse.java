@@ -20,6 +20,7 @@ public class SaleResponse {
     private BigDecimal amountPaid;
     private BigDecimal balanceDue;
     private PaymentStatus paymentStatus;
+    private String paymentMethod;
     private LocalDateTime createdAt;
     private List<SaleItemResponse> items;
 

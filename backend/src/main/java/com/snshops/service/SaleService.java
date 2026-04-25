@@ -3,6 +3,7 @@ package com.snshops.service;
 import com.snshops.dto.SaleRequest;
 import com.snshops.dto.SaleResponse;
 import com.snshops.entity.*;
+import com.snshops.enums.PaymentMethod;
 import com.snshops.enums.PaymentStatus;
 import com.snshops.exception.BadRequestException;
 import com.snshops.exception.InsufficientStockException;
@@ -93,6 +94,16 @@ public class SaleService {
             throw new BadRequestException("Walk-in customers cannot have outstanding debt. Full payment required.");
         }
 
+        // Parse payment method (default to CASH)
+        PaymentMethod paymentMethodEnum = PaymentMethod.CASH;
+        if (request.getPaymentMethod() != null) {
+            try {
+                paymentMethodEnum = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // default to CASH if invalid
+            }
+        }
+
         // Create sale — assigned to user
         Sale sale = Sale.builder()
                 .user(user)
@@ -101,6 +112,7 @@ public class SaleService {
                 .amountPaid(amountPaid)
                 .balanceDue(balanceDue)
                 .paymentStatus(paymentStatus)
+                .paymentMethod(paymentMethodEnum)
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -171,6 +183,7 @@ public class SaleService {
                 .amountPaid(sale.getAmountPaid())
                 .balanceDue(sale.getBalanceDue())
                 .paymentStatus(sale.getPaymentStatus())
+                .paymentMethod(sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "CASH")
                 .createdAt(sale.getCreatedAt())
                 .items(itemResponses)
                 .build();

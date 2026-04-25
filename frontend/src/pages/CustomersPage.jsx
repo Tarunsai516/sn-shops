@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customerApi } from '../api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, capitalize } from '../utils/helpers';
 import Modal from '../components/Modal';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
+  const [debtFilter, setDebtFilter] = useState(''); // '' | 'has' | 'clear'
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '' });
@@ -26,6 +28,7 @@ export default function CustomersPage() {
       const { data } = await customerApi.getAll({ search, page, size: 15 });
       setCustomers(data.content);
       setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements || data.content.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -49,12 +52,28 @@ export default function CustomersPage() {
     }
   };
 
+  // Derived stats
+  const stats = useMemo(() => {
+    const totalDebt = customers.reduce((sum, c) => sum + (c.totalDebtBalance || 0), 0);
+    return { count: totalElements, totalDebt };
+  }, [customers, totalElements]);
+
+  // Filtered by debt status
+  const filteredCustomers = useMemo(() => {
+    if (debtFilter === 'has') return customers.filter(c => c.totalDebtBalance > 0);
+    if (debtFilter === 'clear') return customers.filter(c => !c.totalDebtBalance || c.totalDebtBalance === 0);
+    return customers;
+  }, [customers, debtFilter]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-text">Customers</h1>
-          <p className="text-text-muted text-sm mt-1">Manage your customer base</p>
+          <p className="text-text-muted text-sm mt-1">
+            {stats.count} customer{stats.count !== 1 ? 's' : ''}
+            {stats.totalDebt > 0 && <> · <span className="text-danger font-semibold">{formatCurrency(stats.totalDebt)} outstanding</span></>}
+          </p>
         </div>
         <button onClick={() => { setError(''); setShowModal(true); }} className="btn-primary">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
@@ -62,14 +81,27 @@ export default function CustomersPage() {
         </button>
       </div>
 
-      <div className="max-w-md">
-        <input
-          type="text"
+      {/* Search + Filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="max-w-sm flex-1">
+          <input
+            type="text"
+            className="input-field"
+            placeholder="Search by name or phone..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          />
+        </div>
+        <select
           className="input-field"
-          placeholder="Search by name or phone..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-        />
+          value={debtFilter}
+          onChange={(e) => setDebtFilter(e.target.value)}
+          style={{ width: 'auto', minWidth: '140px' }}
+        >
+          <option value="">All Customers</option>
+          <option value="has">Has Debt</option>
+          <option value="clear">No Debt</option>
+        </select>
       </div>
 
       <div className="glass-card p-0 overflow-hidden">
@@ -89,12 +121,24 @@ export default function CustomersPage() {
                 [...Array(5)].map((_, i) => (
                   <tr key={i}><td colSpan={5}><div className="h-4 bg-primary/5 rounded animate-pulse" /></td></tr>
                 ))
-              ) : customers.length === 0 ? (
+              ) : filteredCustomers.length === 0 ? (
                 <tr><td colSpan={5} className="text-center text-text-muted py-12">No customers found</td></tr>
               ) : (
-                customers.map((c) => (
+                filteredCustomers.map((c) => (
                   <tr key={c.id} className="cursor-pointer" onClick={() => navigate(`/customers/${c.id}`)}>
-                    <td className="font-medium text-text">{c.name}</td>
+                    <td className="font-medium text-text">
+                      <div className="flex items-center gap-2.5">
+                        <div style={{
+                          width: '2rem', height: '2rem', borderRadius: '0.625rem',
+                          background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'white', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
+                        }}>
+                          {c.name?.charAt(0).toUpperCase()}
+                        </div>
+                        {capitalize(c.name)}
+                      </div>
+                    </td>
                     <td className="text-text-muted">{c.phone || '-'}</td>
                     <td>
                       <span className={`font-semibold ${c.totalDebtBalance > 0 ? 'text-danger' : 'text-success'}`}>
@@ -103,12 +147,27 @@ export default function CustomersPage() {
                     </td>
                     <td className="text-text-muted text-sm">{formatDate(c.createdAt)}</td>
                     <td>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.id}`); }}
-                        className="btn-secondary py-1.5 px-3 text-xs"
-                      >
-                        View Profile
-                      </button>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => navigate(`/customers/${c.id}`)}
+                          className="text-primary-light hover:text-primary text-xs font-semibold transition"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+                        >
+                          View →
+                        </button>
+                        {c.totalDebtBalance > 0 && (
+                          <button
+                            onClick={() => navigate('/debts')}
+                            className="text-xs font-semibold px-2 py-1 rounded-lg transition"
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
+                              color: '#f87171', cursor: 'pointer',
+                            }}
+                          >
+                            Collect
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

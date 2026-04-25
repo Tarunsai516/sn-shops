@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { customerApi } from '../api';
-import { formatCurrency, formatDate, getStatusBadge } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadge, capitalize } from '../utils/helpers';
 
 export default function CustomerProfilePage() {
   const { id } = useParams();
@@ -42,7 +42,7 @@ export default function CustomerProfilePage() {
             {customer.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-text">{customer.name}</h1>
+            <h1 className="text-2xl font-bold text-text">{capitalize(customer.name)}</h1>
             <p className="text-text-muted text-sm">{customer.phone || 'No phone'} • Joined {formatDate(customer.createdAt)}</p>
           </div>
           <div className="text-right">
