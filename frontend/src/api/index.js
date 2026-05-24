@@ -1,12 +1,23 @@
 import axios from 'axios';
 
-const API_BASE = '/api';
+/**
+ * API Base URL Strategy:
+ * - Docker / Dev (Nginx or Vite proxy): VITE_API_BASE_URL is not set → use relative '/api'
+ *   (Vite proxy in dev, Nginx proxy in Docker both forward /api → backend:8080)
+ * - Vercel + Railway: VITE_API_BASE_URL = 'https://your-backend.up.railway.app'
+ *   → full URL used so Vercel can reach Railway directly
+ */
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 15000, // 15s timeout — prevents hanging requests in production
 });
 
+// Attach JWT token to every request automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -15,13 +26,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle auth errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Token expired or invalid — clear session and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';      
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

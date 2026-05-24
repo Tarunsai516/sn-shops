@@ -1,0 +1,26 @@
+services:
+  # ===== Spring Boot Backend =====
+  - type: web
+    name: sn-shops-backend
+    runtime: java
+    rootDir: backend
+    buildCommand: "./mvnw clean package -DskipTests"
+    startCommand: "java -jar target/sn-shops-backend-1.0.0.jar"
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_URL
+        sync: false          # set manually in Render dashboard
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to your Vercel URL after deployment
+      - key: PORT
+        value: "8080"
+      - key: JAVA_VERSION
+        value: "17"

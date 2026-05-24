@@ -3,10 +3,13 @@ package com.snshops.exception;
 import com.snshops.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -42,9 +45,32 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid value for parameter: " + ex.getName());
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        // Do NOT reveal whether username or password was wrong
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "You do not have permission to access this resource");
+    }
+
+    /**
+     * Catch-all handler.
+     * IMPORTANT: Never expose ex.getMessage() in production — it can leak internal details.
+     * Log the full exception server-side for debugging.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + ex.getMessage());
+        // Log internally (Spring Boot will print to console/logs)
+        ex.printStackTrace();
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message) {

@@ -43,9 +43,12 @@ frontend/.vite/
 ehthumbs.db
 Thumbs.db
 
-# Environment files
+# Environment files — never commit secrets
 .env
 *.env.local
+backend/.env
+frontend/.env
+# NOTE: frontend/.env.production is safe to commit (no secrets, just a URL placeholder)
 
 # Misc
 *.bak
