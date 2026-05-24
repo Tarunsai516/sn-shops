@@ -134,20 +134,24 @@ public class SaleService {
         return mapToResponse(sale);
     }
 
+    @Transactional(readOnly = true)
     public Page<SaleResponse> getAllSales(User user, Pageable pageable) {
         return saleRepository.findAllByUser(user, pageable).map(this::mapToResponse);
     }
 
+    @Transactional(readOnly = true)
     public SaleResponse getSaleById(User user, Long id) {
         Sale sale = saleRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + id));
         return mapToResponse(sale);
     }
 
+    @Transactional(readOnly = true)
     public Page<SaleResponse> getSalesByCustomer(User user, Long customerId, Pageable pageable) {
         return saleRepository.findByUserAndCustomerId(user, customerId, pageable).map(this::mapToResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<SaleResponse> getDebtSales(User user, Pageable pageable) {
         List<PaymentStatus> debtStatuses = List.of(PaymentStatus.UNPAID, PaymentStatus.PARTIAL);
         return saleRepository.findByUserAndPaymentStatusIn(user, debtStatuses, pageable).map(this::mapToResponse);
