@@ -9,10 +9,10 @@ A production-ready full-stack web application for small retail businesses. Manag
 | Layer | Technology |
 |-------|-----------|
 | Backend | Java 17, Spring Boot 3.2.5, Spring Security (JWT) |
-| Database | MySQL 8.0 via Spring Data JPA + Hibernate |
-| Frontend | React 18 (Vite), Tailwind CSS v4, Axios, React Router v6 |
+| Database | PostgreSQL 16 via Spring Data JPA + Hibernate |
+| Frontend | React 19 (Vite), Tailwind CSS v4, Axios, React Router v6 |
 | Auth | Stateless JWT (jjwt 0.12.x) |
-| Infrastructure | Docker Compose (MySQL) |
+| Infrastructure | Docker Compose, Render, Vercel, Neon |
 
 ---
 
@@ -31,14 +31,14 @@ sn-shops/
 │       ├── dto/                    # Request / Response DTOs
 │       ├── enums/                  # Role, PaymentStatus
 │       └── exception/              # GlobalExceptionHandler + custom exceptions
-├── frontend/                       # React 18 + Vite
+├── frontend/                       # React 19 + Vite
 │   └── src/
 │       ├── api/                    # Axios service layer
 │       ├── components/             # Layout, Modal
 │       ├── context/                # AuthContext (JWT + localStorage)
 │       ├── pages/                  # Login, Register, Dashboard, POS, Products, Customers, Debts
 │       └── utils/                  # helpers (currency, date, badge)
-└── docker-compose.yml              # MySQL 8 with persistent volume
+└── docker-compose.yml              # PostgreSQL 16 with persistent volume
 ```
 
 ---
@@ -49,20 +49,20 @@ sn-shops/
 - Java 17+
 - Maven 3.9+
 - Node.js 18+
-- Docker & Docker Compose (for MySQL)
+- Docker & Docker Compose (for local PostgreSQL)
 
 ---
 
-### Step 1 — Start MySQL with Docker
+### Step 1 — Start PostgreSQL with Docker
 
 ```bash
 docker-compose up -d
 ```
 
-This starts MySQL 8 on port `3306` with:
-- Database: `your_dbname`
-- User: `your_username`
-- Password: `your_password`
+This starts PostgreSQL 16 on port `5432` with:
+- Database: `yourdb name`
+- User: `user name`
+- Password: `user password`
 
 ---
 
@@ -73,10 +73,12 @@ cd backend
 mvn spring-boot:run
 ```
 
-Backend runs on **http://localhost:8080**
+Backend runs on **https://sn-shops-backend.onrender.com**
 
 > Tables are auto-created by Hibernate (`spring.jpa.hibernate.ddl-auto=update`).  
 > No SQL migrations needed.
+
+> For production, Render hosts the backend, Neon hosts PostgreSQL, and Vercel hosts the frontend.
 
 ---
 
@@ -88,15 +90,37 @@ npm install
 npm run dev
 ```
 
-Frontend runs on **http://localhost:5173**
+Frontend runs on **https://sn-shops.vercel.app/**
 
 > Vite proxies all `/api` requests to the Spring Boot server — no CORS issues in development.
+
+### Production Deployment
+
+#### Backend on Render
+1. Create a Render Blueprint from [render.yaml](render.yaml).
+2. Use the backend Dockerfile at [backend/Dockerfile](backend/Dockerfile).
+3. Set environment variables on Render:
+  - `DB_URL=jdbc:postgresql://<neon-host>:5432/<db-name>?sslmode=require`
+  - `DB_USERNAME=<neon-username>`
+  - `DB_PASSWORD=<neon-password>`
+  - `JWT_SECRET=<strong-random-secret>`
+  - `ALLOWED_ORIGINS=https://<your-vercel-domain>`
+  - `JWT_EXPIRATION_MS=86400000`
+  - `PORT=8080`
+4. Health check path: `/actuator/health`
+
+#### Frontend on Vercel
+1. Import the GitHub repo into Vercel.
+2. Set the root directory to `frontend`.
+3. Add `VITE_API_BASE_URL=https://<your-render-backend>.onrender.com`.
+4. Build command: `npm run build`.
+5. Output directory: `dist`.
 
 ---
 
 ## 🔐 First Use
 
-1. Open **http://localhost:5173**
+1. Open **https://sn-shops.vercel.app/**
 2. Click **Register** to create your first admin account
 3. Log in and start using the system
 
@@ -231,12 +255,11 @@ Tables auto-created by Hibernate:
 
 ```yaml
 # docker-compose.yml
-MySQL 8.0
-  Port: 3306
-  Database: your_dbname
-  User: your_nmae / Password: your_password
-  Root Password: your_password
-  Volume: mysql_data (persistent)
+PostgreSQL 16
+  Port: 5432
+  Database: snshopsDB
+  User: postgres / Password: secret123
+  Volume: postgres_data (persistent)
 ```
 
 ---
@@ -247,6 +270,14 @@ MySQL 8.0
 - All endpoints except `/api/auth/**` require a valid token
 - Passwords are BCrypt-hashed (strength 10)
 - JWT secret is configurable via `application.properties`
+- Do not commit real secrets into `.env`, `.idea`, or deployment files
+
+## 🔎 Exposure Review
+
+- Tracked files were checked for secret-like values.
+- [frontend/.env.production](frontend/.env.production) only contains a placeholder public API URL.
+- [README.md](README.md) and tracked env templates now use placeholders instead of real credentials.
+- Local files such as `.env` and `backend/.env` are ignored by Git and are not tracked.
 
 ---
 
