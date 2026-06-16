@@ -9,7 +9,7 @@ services:
     autoDeploy: true
     envVars:
       - key: DB_URL
-        sync: false          # set manually in Render dashboard
+        sync: false          # Must be jdbc:postgresql://HOST:5432/DBNAME?sslmode=require
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
@@ -19,7 +19,7 @@ services:
       - key: JWT_EXPIRATION_MS
         value: "86400000"
       - key: ALLOWED_ORIGINS
-        sync: false          # set to your Vercel URL after deployment
+        value: "http://localhost:5173,http://localhost:3000"
       - key: PORT
         value: "8080"
       - key: JAVA_VERSION
