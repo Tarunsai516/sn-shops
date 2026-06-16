@@ -2,14 +2,13 @@ import axios from 'axios';
 
 /**
  * API Base URL Strategy:
- * - Docker / Dev (Nginx or Vite proxy): VITE_API_BASE_URL is not set → use relative '/api'
+ * - Local development / Docker: VITE_API_BASE_URL is not set → use relative '/api'
  *   (Vite proxy in dev, Nginx proxy in Docker both forward /api → backend:8080)
- * - Vercel + Railway: VITE_API_BASE_URL = 'https://your-backend.up.railway.app'
- *   → full URL used so Vercel can reach Railway directly
+ * - Vercel + Render: VITE_API_BASE_URL = 'https://your-render-service.onrender.com'
+ *   → full URL used so Vercel can reach Render directly
  */
-const API_BASE = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : '/api';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+const API_BASE = apiBaseUrl ? `${apiBaseUrl}/api` : '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
